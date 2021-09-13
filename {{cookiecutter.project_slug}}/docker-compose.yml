@@ -1,0 +1,48 @@
+# 3-tiered infrastructure with PostgreSQL, PostgREST, hosted by Nginx.
+#
+# Nginx handles TLS, static content and acts as a reverse-proxy for API requests.
+# The application server (PostgREST) is connected to a PostgreSQL database.
+
+version: "3.7"
+
+services:
+  api:
+    image: postgrest/postgrest:{{ cookiecutter.postgrest_version }}
+    container_name: postgrest
+    ports:
+    - "3000:3000"
+    environment:
+      PGRST_DB_URI: "postgres://authenticator:{{ cookiecutter.authenticator_password }}@database:5432/{{ cookiecutter.project_slug }}"
+      PGRST_DB_SCHEMA: "public"
+      PGRST_DB_ANON_ROLE: "anonymous"
+      PGRST_JWT_SECRET: "{{ random_ascii_string(64) }}"
+      PGRST_OPENAPI_SERVER_PROXY_URI: "http://127.0.0.1:3000"
+    volumes:
+    - ./logs/api:/var/log:rw
+    depends_on:
+    - database
+  swagger:
+    image: swaggerapi/swagger-ui
+    container_name: swagger
+    ports:
+    - "8081:8080"
+    environment:
+      API_URL: http://localhost:3000/
+    depends_on:
+    - server
+  database:
+    image: postgres:{{ cookiecutter.postgresql_version }}
+    container_name: database
+    environment:
+      POSTGRES_DB: "{{ cookiecutter.project_slug }}"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "{{ cookiecutter.postgresql_password }}"
+      AUTHENTICATOR_PASSWORD: "{{ cookiecutter.authenticator_password }}"
+    ports:
+    - 5432:5432
+    volumes:
+    - ./logs/database:/var/log/postgresql:rw
+    - ./data:/var/lib/postgres/:rw
+    - ./initdb:/docker-entrypoint-initdb.d:ro
+    # Mount psql config file in the system configuration directory.
+    - ./.psqlrc:/etc/postgresql-common/psqlrc:ro

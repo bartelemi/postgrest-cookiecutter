@@ -1,0 +1,61 @@
+-- PostgreSQL command line tool settings.
+-- https://www.postgresql.org/docs/current/app-psql.html
+
+-- Be quiet at startup.
+\set QUIET 1
+
+-- Default prompt look: [hostname] @ [database] [conn status] [transaction status] >
+\set PROMPT1 '%[%033[1m%]%M %n@%/%R%~%x%[%033[0m%]:%>> '
+-- Multi-line prompt look.
+\set PROMPT2 '[more] %R > '
+
+-- Automatically switch between table/expanded table format.
+\pset expanded auto
+\pset columns 120
+
+-- Time statements.
+\timing on
+
+-- Transaction behaviour settings.
+\set ON_ERROR_STOP on
+\set ON_ERROR_ROLLBACK interactive
+\set VERBOSITY verbose
+
+-- Various display settings.
+\pset null '[null]'
+\pset linestyle 'unicode'
+\pset unicode_border_linestyle single
+\pset unicode_column_linestyle single
+\pset unicode_header_linestyle single
+set intervalstyle to 'postgres_verbose';
+
+-- Set app name.
+set application_name to 'local';
+
+-- History settings.
+-- Ignore duplicate entries if the same command was run more than once.
+\set HISTCONTROL ignoredups
+-- Use a sepearate history file for each database.
+\set HISTFILE ~/.psql_history- :DBNAME
+
+-- Customise pager
+\setenv LESS '-iMFXSx4R'
+
+-- Helpful aliases.
+
+-- > :version -- gives psql version output
+\set version    'SELECT version();'
+
+-- > :extensions  -- lists all available extensions
+\set extensions 'SELECT * FROM pg_available_extensions;'
+
+-- > :settings  -- shows all psql settings and their values
+\set settings   'SELECT name, setting,unit,context FROM pg_settings;'
+
+-- > :uptime  -- how long has this thing been up?
+\set uptime     'SELECT now() - pg_postmaster_start_time() AS uptime;'
+
+-- Restore echo.
+\unset QUIET
+
+\echo 'Loaded config from ~/.psqlrc';

@@ -1,0 +1,30 @@
+{
+    "project_name": "Project Name",
+    "project_slug": "{{ cookiecutter.project_name.lower()|replace(' ', '_')|replace('-', '_')|replace('.', '_')|trim() }}",
+    "description": "Project description.",
+    "author_name": "John Smith",
+    "domain_name": "example.com",
+    "email": "{{ cookiecutter.author_name.lower()|replace(' ', '-') }}@{{ cookiecutter.domain_name }}",
+    "version": "0.1.0",
+    "open_source_license": [
+      "MIT",
+      "BSD",
+      "GPLv3",
+      "Apache Software License 2.0",
+      "Not open source"
+    ],
+    "timezone": "UTC",
+    "postgrest_version": [
+        "latest"
+    ],
+    "postgresql_version": [
+      "latest",
+      "13.3",
+      "12.6",
+      "11.11",
+      "10.16"
+    ],
+    "postgresql_password": "postgres",
+    "authenticator_password": "password",
+    "_extensions": ["cookiecutter.extensions.RandomStringExtension"]
+}
