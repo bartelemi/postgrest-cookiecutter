@@ -6,11 +6,20 @@
 version: "3.7"
 
 services:
+  web:
+    image: nginx:{{ cookiecutter.nginx_version }}
+    volumes:
+    - ./acme-challenge:/srv/acme-challenge:ro
+    - ./certificates:/etc/ssl/certs:ro
+    - ./log/web:/var/log/nginx:rw
+    - ./nginx:/tmp/nginx:ro
+    depends_on:
+    - api
+    ports:
+    - "8080:80"
+    command: /tmp/nginx/init.sh
   api:
     image: postgrest/postgrest:{{ cookiecutter.postgrest_version }}
-    container_name: postgrest
-    ports:
-    - "3000:3000"
     environment:
       PGRST_DB_URI: "postgres://authenticator:{{ cookiecutter.authenticator_password }}@database:5432/{{ cookiecutter.project_slug }}"
       PGRST_DB_SCHEMA: "public"
@@ -23,16 +32,12 @@ services:
     - database
   swagger:
     image: swaggerapi/swagger-ui
-    container_name: swagger
-    ports:
-    - "8081:8080"
     environment:
-      API_URL: http://localhost:3000/
+      API_URL: http://api:3000/
     depends_on:
-    - server
+    - api
   database:
     image: postgres:{{ cookiecutter.postgresql_version }}
-    container_name: database
     environment:
       POSTGRES_DB: "{{ cookiecutter.project_slug }}"
       POSTGRES_USER: "postgres"
