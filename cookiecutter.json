@@ -3,7 +3,7 @@
     "project_slug": "{{ cookiecutter.project_name.lower()|replace(' ', '_')|replace('-', '_')|replace('.', '_')|trim() }}",
     "description": "Project description.",
     "author_name": "John Smith",
-    "domain_name": "example.com",
+    "domain_name": "127.0.0.1",
     "email": "{{ cookiecutter.author_name.lower()|replace(' ', '-') }}@{{ cookiecutter.domain_name }}",
     "version": "0.1.0",
     "open_source_license": [
@@ -22,6 +22,7 @@
       "1.20",
       "1.20-alpine"
     ],
+    "nginx_use_ssl": "n",
     "postgrest_version": [
         "latest"
     ],

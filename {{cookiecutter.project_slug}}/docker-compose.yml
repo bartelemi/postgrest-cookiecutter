@@ -8,16 +8,24 @@ version: "3.7"
 services:
   web:
     image: nginx:{{ cookiecutter.nginx_version }}
+    environment:
+      NGINX_HOST: {{ cookiecutter.domain_name }}
+      NGINX_HTTP_PORT: 80
+{%- if cookiecutter.nginx_use_ssl == 'y' %}
+      NGINX_HTTPS_PORT: 443
+{%- endif %}
+    ports:
+    - "8080:80"
+{%- if cookiecutter.nginx_use_ssl == 'y' %}
+    - "4443:443"
+{%- endif %}
     volumes:
     - ./acme-challenge:/srv/acme-challenge:ro
     - ./certificates:/etc/ssl/certs:ro
-    - ./log/web:/var/log/nginx:rw
-    - ./nginx:/tmp/nginx:ro
+    - ./logs/web:/var/log/nginx:rw
+    - ./nginx/templates:/etc/nginx/templates:ro
     depends_on:
     - api
-    ports:
-    - "8080:80"
-    command: /tmp/nginx/init.sh
   api:
     image: postgrest/postgrest:{{ cookiecutter.postgrest_version }}
     environment:
