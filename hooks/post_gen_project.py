@@ -53,7 +53,7 @@ def unpack_release(file_name: str, destination: str):
 def set_openapi_doc_url(root: Path):
     index_html = root / "index.html"
     sample_openapi_url = "https://petstore.swagger.io/v2/swagger.json"
-    project_openapi_url = "http://api:3000/swagger.json"
+    project_openapi_url = "http://{{ cookiecutter.domain_name }}:8080/api/"
     with open(index_html) as original:
         updated_index_html = original.read().replace(
             sample_openapi_url, project_openapi_url
@@ -65,10 +65,12 @@ def set_openapi_doc_url(root: Path):
 def main():
     github_repo = "swagger-api/swagger-ui"
     destination = Path("www/swagger")
+    print("Pulling and setting up Swagger page... ", end="")
     release_info = get_release_info(github_repo)
     file_name = fetch_release_bundle(release_info["tarball_url"])
     unpack_release(file_name, destination)
     set_openapi_doc_url(destination)
+    print("done!")
 
 
 if "{{ cookiecutter.use_swagger_ui }}" == "y":

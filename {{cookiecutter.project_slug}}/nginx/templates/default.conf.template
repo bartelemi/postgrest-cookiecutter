@@ -8,19 +8,23 @@ error_log /var/log/nginx/error.log warn;
 access_log /var/log/nginx/access.log;
 
 # Add headers to tell browsers to be stricter
+add_header Access-Control-Allow-Origin "https://${NGINX_HOST}" always;
 add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-Frame-Options "DENY" always;
 add_header X-XSS-Protection "1; mode=block" always;
-add_header Content-Security-Policy "sandbox allow-scripts allow-forms allow-same-origin; referrer no-referrer; reflected-xss block; report-uri /api/rpc/csp_report; default-src 'none'; img-src 'self'; style-src 'self' cdnjs.cloudflare.com; font-src 'self' cdn.auth0.com cdnjs.cloudflare.com; script-src 'self' example.auth0.com cdn.auth0.com code.jquery.com cdnjs.cloudflare.com; connect-src 'self' example.auth0.com" always;
-add_header Access-Control-Allow-Origin "https://${NGINX_HOST}" always;
+add_header Referrer-Policy "no-referrer" always;
+add_header Content-Security-Policy "sandbox Allow-Scripts allow-forms allow-same-origin; Default-Src 'none'; Img-Src 'self' data:; Style-Src 'self' 'unsafe-inline' cdnjs.cloudflare.com; Font-Src 'self' cdn.auth0.com cdnjs.cloudflare.com; Script-Src 'self' 'unsafe-inline' code.jquery.com cdnjs.cloudflare.com; Connect-Src 'self'" always;
 
 # Handle traffic on HTTP port :${NGINX_HTTP_PORT}.
 server {
-    listen ${NGINX_HTTP_PORT};
-    listen [::]:${NGINX_HTTP_PORT} ipv6only=on;
+    listen ${NGINX_HTTP_PORT} default_server;
+    listen [::]:${NGINX_HTTP_PORT} default_server ipv6only=on;
+    server_name ${NGINX_HOST};
 
-    # ACME challenges for letsencrypt
+    root /usr/share/nginx/html;
+
+    # ACME challenges for letsencrypt.
     location /.well-known/acme-challenge {
         default_type text/plain;
         root /srv/acme-challenge;
@@ -33,6 +37,12 @@ server {
         return 301 https://${NGINX_HOST}$request_uri;
     }
 {% else %}
+{%- if cookiecutter.use_swagger_ui == 'y' %}
+    # SwaggerUI.
+    location /swagger {
+        try_files $uri $uri/index.html =404;
+    }
+{%- endif %}
     # Proxy api requests to the PostgREST.
     location /api/ {
         proxy_pass http://api:3000/;
@@ -66,14 +76,22 @@ resolver_timeout 5s;
 
 # Handle traffic on HTTPS port :${NGINX_HTTPS_PORT}.
 server {
-    listen ${NGINX_HTTPS_PORT} default_server;
-    listen [::]:${NGINX_HTTPS_PORT} default_server ipv6only=on;
-    server_name ${NGINX_HOST};
+    listen ${NGINX_HTTPS_PORT};
+    listen [::]:${NGINX_HTTPS_PORT} ipv6only=on;
+
+    root /usr/share/nginx/html;
 
     # Certificates
     ssl on;
     ssl_certificate     /etc/ssl/certs/live/${NGINX_HOST}/fullchain.pem;
     ssl_certificate_key /etc/ssl/certs/live/${NGINX_HOST}/privkey.pem;
+
+{%- if cookiecutter.use_swagger_ui == 'y' %}
+    # SwaggerUI.
+    location /swagger {
+        try_files $uri $uri/index.html =404;
+    }
+{%- endif %}
 
     # Proxy api requests to the PostgREST
     location /api/ {
