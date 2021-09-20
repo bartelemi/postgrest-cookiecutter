@@ -35,6 +35,7 @@
     ],
     "postgresql_user": "postgres",
     "postgresql_password": "postgres",
+    "use_swagger_ui": "y",
     "authenticator_password": "password",
     "_extensions": ["cookiecutter.extensions.RandomStringExtension"]
 }

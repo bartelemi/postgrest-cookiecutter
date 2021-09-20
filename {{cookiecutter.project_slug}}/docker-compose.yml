@@ -24,6 +24,9 @@ services:
     - ./certificates:/etc/ssl/certs:ro
     - ./logs/web:/var/log/nginx:rw
     - ./nginx/templates:/etc/nginx/templates:ro
+{%- if cookiecutter.use_swagger_ui == 'y' %}
+    - ./www/swagger:/usr/share/nginx/html/swagger:ro
+{%- endif %}
     depends_on:
     - api
   api:
@@ -33,17 +36,16 @@ services:
       PGRST_DB_SCHEMA: "public"
       PGRST_DB_ANON_ROLE: "anonymous"
       PGRST_JWT_SECRET: "{{ random_ascii_string(64) }}"
-      PGRST_OPENAPI_SERVER_PROXY_URI: "http://127.0.0.1:3000"
+{%- if cookiecutter.use_swagger_ui == 'y' %}
+      PGRST_OPENAPI_MODE: "follow-privileges"
+      PGRST_OPENAPI_SERVER_PROXY_URI: "http://{{ cookiecutter.domain_name }}:8080/api/"
+{%- else %}
+      PGRST_OPENAPI_MODE: "disabled"
+{%- endif %}
     volumes:
     - ./logs/api:/var/log:rw
     depends_on:
     - database
-  swagger:
-    image: swaggerapi/swagger-ui
-    environment:
-      API_URL: http://api:3000/
-    depends_on:
-    - api
   database:
     image: postgres:{{ cookiecutter.postgresql_version }}
     environment:
