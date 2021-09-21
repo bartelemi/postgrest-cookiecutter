@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import json
 import os
+import subprocess
 import sys
 import tarfile
 from contextlib import suppress
 from pathlib import Path
-from shutil import move
+from shutil import move, which
 from urllib.request import urlopen, urlretrieve
 
 
@@ -62,7 +63,7 @@ def set_openapi_doc_url(root: Path):
         updated.write(updated_index_html)
 
 
-def main():
+def init_swagger_ui():
     github_repo = "swagger-api/swagger-ui"
     destination = Path("www/swagger")
     print("Pulling and setting up Swagger page... ", end="", flush=True)
@@ -73,5 +74,39 @@ def main():
     print("done!")
 
 
-if "{{ cookiecutter.use_swagger_ui }}" == "y":
+def get_sqitch_tool() ->  str:
+    sqitch = which("sqitch")
+    if sqitch is None:
+        print("'sqitch' not found on PATH. Follow the installation instructions here")
+        print(" > http://sqitch.org/download/")
+        exit(1)
+    return sqitch
+
+
+def init_sqitch():
+    print("Configuring sqitch for db migrations...")
+    sqitch = get_sqitch_tool()
+    process_info = subprocess.run(
+        (
+            sqitch,
+            "init", "{{ cookiecutter.project_slug }}",
+            "--engine", "pg",
+            "--top-dir", "sql",
+            "--target", "db:pg:{{ cookiecutter.project_slug }}",
+        ),
+        timeout=30,
+    )
+    if process_info.returncode != 0:
+        exit(process_info.returncode)
+    print("Sqitch initialised!")
+
+
+def main():
+    if "{{ cookiecutter.use_swagger_ui }}" == "y":
+        init_swagger_ui()
+    init_sqitch()
+    exit(0)
+
+
+if __name__ == "__main__":
     main()
