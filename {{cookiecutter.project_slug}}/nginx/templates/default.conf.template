@@ -1,8 +1,3 @@
-# Misc.
-charset utf-8;
-server_tokens off;
-underscores_in_headers on;
-
 # Log configuration.
 error_log /var/log/nginx/error.log warn;
 access_log /var/log/nginx/access.log;
@@ -15,6 +10,11 @@ add_header X-Frame-Options "DENY" always;
 add_header X-XSS-Protection "1; mode=block" always;
 add_header Referrer-Policy "no-referrer" always;
 add_header Content-Security-Policy "sandbox Allow-Scripts allow-forms allow-same-origin; Default-Src 'none'; Img-Src 'self' data:; Style-Src 'self' 'unsafe-inline' cdnjs.cloudflare.com; Font-Src 'self' cdn.auth0.com cdnjs.cloudflare.com; Script-Src 'self' 'unsafe-inline' code.jquery.com cdnjs.cloudflare.com; Connect-Src 'self'" always;
+
+# PostgREST upstream service.
+upstream postgrest {
+    server api:3000;
+}
 
 # Handle traffic on HTTP port :${NGINX_HTTP_PORT}.
 server {
@@ -45,13 +45,15 @@ server {
 {%- endif %}
     # Proxy api requests to the PostgREST.
     location /api/ {
-        proxy_pass http://api:3000/;
-
+        proxy_pass         http://postgrest/;
+        proxy_http_version 1.1;
+        # REST API works with JSON. 
+        default_type application/json;
         # Rewrite Location and Content-Location headers.
         proxy_hide_header Location;
-        add_header        Location /api$upstream_http_location;
+        add_header        Location /api/$upstream_http_location;
         proxy_hide_header Content-Location;
-        add_header        Content-Location /api$upstream_http_content_location;
+        add_header        Content-Location /api/$upstream_http_content_location;
     }
 {%- endif %}
 }
@@ -95,13 +97,15 @@ server {
 
     # Proxy api requests to the PostgREST
     location /api/ {
-        proxy_pass http://api:3000/;
-
+        proxy_pass         http://postgrest/;
+        proxy_http_version 1.1;
+        # REST API works with JSON. 
+        default_type application/json;
         # Rewrite Location and Content-Location headers.
         proxy_hide_header Location;
-        add_header        Location  /api$upstream_http_location;
+        add_header        Location /api/$upstream_http_location;
         proxy_hide_header Content-Location;
-        add_header        Content-Location  /api$upstream_http_content_location;
+        add_header        Content-Location /api/$upstream_http_content_location;
     }
 }
 {%- endif %}
