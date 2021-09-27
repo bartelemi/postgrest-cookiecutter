@@ -46,6 +46,29 @@ services:
     - ./logs/api:/var/log:rw
     depends_on:
     - database
+    - migrations
+  migrations:
+    image: sqitch/sqitch:latest
+    entrypoint:
+    - "/repo/scripts/wait-for-it.sh"
+    - --host=database
+    - --port=5432
+    - --delay=5
+    - --timeout=10
+    - --
+    command:
+    - sqitch
+    - deploy
+    - --verify
+    environment:
+      PGUSER: "postgres"
+      PGPASSWORD: "postgres"
+      PGHOST: "database"
+      PGDATABASE: "tem"
+    volumes:
+    - ./:/repo:ro
+    depends_on:
+    - database
   database:
     image: postgres:{{ cookiecutter.postgresql_version }}
     environment:
@@ -61,3 +84,9 @@ services:
     - ./initdb:/docker-entrypoint-initdb.d:ro
     # Mount psql config file in the system configuration directory.
     - ./.psqlrc:/etc/postgresql-common/psqlrc:ro
+    healthcheck:
+      test: pg_isready -h database -U postgres -d "{{ cookiecutter.project_slug }}"
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
